@@ -1,3 +1,3 @@
-Code used in Udacity 120: Machine Learning problem sets and for final project -  using machine learning classifiers to predict fraud in an enron email dataset 
+Udacity 120: Machine Learning problem sets and final project code.  Predicting fraud based on Enron email and compensation data sets
 
 
