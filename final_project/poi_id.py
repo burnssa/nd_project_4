@@ -178,12 +178,15 @@ print "... and {0} POIs".format(sum(pois))
 
 data = featureFormat(rescaled_data_dict, features_list, sort_keys = True)
 poi_data = featureFormat(poi_outlier_dict, features_list, sort_keys = True)
+non_poi_data = featureFormat(poi_outlier_dict, features_list, sort_keys = True)
+
 labels, features = targetFeatureSplit(data)
 poi_labels, poi_features = targetFeatureSplit(poi_data)
+non_poi_labels, non_poi_features = targetFeatureSplit(non_poi_data)
 
 feature_train, feature_test, label_train, label_test = train_test_split(features, labels, test_size = 0.3, random_state=42)
-feature_test = feature_test + poi_features
-label_test = label_test + poi_labels
+feature_test = feature_test + poi_features + non_poi_features
+label_test = label_test + poi_labels + non_poi_labels
 
 #Select the k-best features for training set, using outlier-free dataset
 best_features = SelectKBest(chi2, 5)
