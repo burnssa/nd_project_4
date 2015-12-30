@@ -5,9 +5,9 @@ aS'salary'
 p2
 aS'bonus'
 p3
-aS'expenses'
+aS'long_term_incentive'
 p4
-aS'from_poi_to_this_person'
+aS'percent_of_emails_to_poi'
 p5
 aS'percent_of_emails_from_poi'
 p6

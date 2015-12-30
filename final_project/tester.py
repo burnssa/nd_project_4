@@ -22,10 +22,12 @@ Recall: {:>0.{display_precision}f}\tF1: {:>0.{display_precision}f}\tF2: {:>0.{di
 RESULTS_FORMAT_STRING = "\tTotal predictions: {:4d}\tTrue positives: {:4d}\tFalse positives: {:4d}\
 \tFalse negatives: {:4d}\tTrue negatives: {:4d}"
 
-def test_classifier(clf, dataset, feature_list, folds = 1000):
+def test_classifier(clf, dataset, feature_list, outlier_set=[], folds = 1000):
     data = featureFormat(dataset, feature_list, sort_keys = True)
     labels, features = targetFeatureSplit(data)
     cv = StratifiedShuffleSplit(labels, folds, random_state = 42)
+    outlier_data = featureFormat(outlier_set, feature_list, sort_keys = True)
+    outlier_labels, outlier_features = targetFeatureSplit(outlier_data)
     true_negatives = 0
     false_negatives = 0
     true_positives = 0
@@ -41,7 +43,11 @@ def test_classifier(clf, dataset, feature_list, folds = 1000):
         for jj in test_idx:
             features_test.append( features[jj] )
             labels_test.append( labels[jj] )
-        
+        for feature in outlier_features:
+            features_test.append( feature )
+        for label in outlier_labels:
+            labels_test.append( label )
+
         ### fit the classifier using training set, and test on test set
         clf.fit(features_train, labels_train)
         predictions = clf.predict(features_test)
@@ -77,14 +83,17 @@ def test_classifier(clf, dataset, feature_list, folds = 1000):
 CLF_PICKLE_FILENAME = "my_classifier.pkl"
 DATASET_PICKLE_FILENAME = "my_dataset.pkl"
 FEATURE_LIST_FILENAME = "my_feature_list.pkl"
+OUTLIER_SET_FILENAME = "my_outlier_dataset.pkl"
 
-def dump_classifier_and_data(clf, dataset, feature_list):
+def dump_classifier_and_data(clf, dataset, feature_list, outlier_set):
     with open(CLF_PICKLE_FILENAME, "w") as clf_outfile:
         pickle.dump(clf, clf_outfile)
     with open(DATASET_PICKLE_FILENAME, "w") as dataset_outfile:
         pickle.dump(dataset, dataset_outfile)
     with open(FEATURE_LIST_FILENAME, "w") as featurelist_outfile:
         pickle.dump(feature_list, featurelist_outfile)
+    with open(OUTLIER_SET_FILENAME, "w") as outlier_dataset_outfile:
+        pickle.dump(outlier_set, outlier_dataset_outfile)
 
 def load_classifier_and_data():
     with open(CLF_PICKLE_FILENAME, "r") as clf_infile:
@@ -93,13 +102,15 @@ def load_classifier_and_data():
         dataset = pickle.load(dataset_infile)
     with open(FEATURE_LIST_FILENAME, "r") as featurelist_infile:
         feature_list = pickle.load(featurelist_infile)
-    return clf, dataset, feature_list
+    with open(OUTLIER_SET_FILENAME, "r") as outlier_dataset_infile:
+        outlier_set = pickle.load(outlier_dataset_infile)
+    return clf, dataset, feature_list, outlier_set
 
 def main():
     ### load up student's classifier, dataset, and feature_list
-    clf, dataset, feature_list = load_classifier_and_data()
+    clf, dataset, feature_list, outlier_set = load_classifier_and_data()
     ### Run testing script
-    test_classifier(clf, dataset, feature_list)
+    test_classifier(clf, dataset, feature_list, outlier_set)
 
 if __name__ == '__main__':
     main()
