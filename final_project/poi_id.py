@@ -21,8 +21,10 @@ from sklearn.neighbors import KNeighborsClassifier
 from poi_email_addresses import poiEmails
 import numpy as np
 import copy
+import statistics
+import code
 
-###Utility functions
+###Utility function
 def get_feature_values(feature, dictionary):
 	return [(float(d[feature]) if d[feature] != 'NaN' else 0.) for d in dictionary.values()]
 
@@ -78,7 +80,7 @@ for feature in features_list[1:]:
 		rescaled_data_dict[person][feature] = rescaled_feature_array[i]
 print "Rescaled_data_dict has {0} elements".format(len(rescaled_data_dict))
 
-#Function to clean away the 10% of points that have the largest residual errors...
+#Function to trim the 1% of points that have the largest residual errors...
 #...(different between the prediction and actual)
 #return a list of tuples named cleaned_data where... 
 #each tuple is of the form (salary, feature, error)
@@ -88,7 +90,7 @@ def outlierFinder(keys, x_features, y_features):
 	predictions = reg.predict(x_features)
 
   #Value to include x percentile of observations
-	outlier_cutoff_value = 0.9
+	outlier_cutoff_value = 0.99
 	residual_errors = np.abs(np.subtract(predictions, y_features))
 	
 	variables = zip(keys, residual_errors)
@@ -100,7 +102,7 @@ def outlierFinder(keys, x_features, y_features):
 	return keys_to_remove
 
 #Trying various features for which to assess datapoint's outlier status
-outlier_test_features = ['bonus', 'exercised_stock_options']
+outlier_test_features = ['exercised_stock_options', 'bonus']
 non_poi_outlier_dict = {}
 poi_outlier_dict = {}
 for feature in outlier_test_features:
@@ -121,18 +123,19 @@ for feature in outlier_test_features:
 
 #Print scatterplots for financial feature vs salary to visually inspect for residual outliers
 #Note - must skip first element of financial_features_list, which is salary
-for index, feature in enumerate(financial_features_list[1:]):
-	features = ['salary', feature]
-	financial_data = featureFormat(data_dict, features)
-	for point in financial_data:
-		salary = point[0]
-		fin_feature = point[1]
-		plt.scatter( salary, fin_feature )
+# print len(financial_features_list[1:])
+# for index, feature in enumerate(financial_features_list[1:]):
+# 	features = ['salary', feature]
+# 	financial_data = featureFormat(data_dict, features)
+# 	for point in financial_data:
+# 		salary = point[0]
+# 		fin_feature = point[1]
+# 		plt.scatter( salary, fin_feature )
 
-	plt.xlabel("salary")
-	plt.ylabel(feature)
-	plt.subplot(4, 3, index)
-plt.show()
+# 	plt.xlabel("salary")
+# 	plt.ylabel(feature)
+# 	plt.subplot(4, 2, index)
+# plt.show()
 
 #Check the completeness of data for each feature
 print "With a current data set of {0} enron employees".format(len(rescaled_data_dict))
@@ -143,6 +146,46 @@ for feature in features_list:
 print "After removing outliers, we have {0} employees in the dataset".format(len(rescaled_data_dict))
 pois = [(1 if d['poi'] == True else 0) for d in rescaled_data_dict.values()]
 print "... and {0} POIs".format(sum(pois))
+
+#Descriptive stats for employees from our resulting 4 outlier categories: 'Outlier POI', 'Non-Outlier POI', 'Non-Outlier non-POI', 'Outlier non-POI'
+non_poi_non_outliers = [ key for key in rescaled_data_dict.keys() if rescaled_data_dict[key]['poi'] == False ]
+non_poi_outliers = non_poi_outlier_dict.keys()
+poi_non_outliers = [ key for key in rescaled_data_dict.keys() if rescaled_data_dict[key]['poi'] == True ]
+poi_outliers = poi_outlier_dict.keys()
+# code.interact(local=locals()) - to interactively assess data
+
+def collect_value_list(dataset, feature):
+	return [float(data_dict[d][feature]) for d in data_dict.keys() if (d in dataset and np.isfinite(float(data_dict[d][feature])))]
+
+for feature in features_list:
+	print "Non-POI non-outlier Median | Mean | Valid Data Points:"
+	np_no_value_list = collect_value_list(non_poi_non_outliers, feature)
+	print "Feature: {0} | {1} | {2} | {3}".format(feature, np.median(np_no_value_list), np.mean(np_no_value_list), len(np_no_value_list))
+	print "----"
+	print "Non-POI outlier Median | Mean | Valid Data Points:"
+	np_o_value_list = collect_value_list(non_poi_outliers, feature)
+	print "Feature: {0} | {1} | {2} | {3}".format(feature, np.median(np_o_value_list), np.mean(np_o_value_list), len(np_o_value_list))
+	print "----"
+	print "POI non-outlier Median | Mean | Valid Data Points:"
+	p_no_value_list = collect_value_list(poi_non_outliers, feature)
+	print "Feature: {0} | {1} | {2} | {3}".format(feature, np.median(p_no_value_list), np.mean(p_no_value_list), len(p_no_value_list))
+	print "----"
+	print "POI outlier Median | Mean | Valid Data Points:"
+	p_o_value_list = collect_value_list(poi_outliers, feature)
+	print "Feature: {0} | {1} | {2} | {3}".format(feature, np.median(p_o_value_list), np.mean(p_o_value_list), len(p_o_value_list))
+	print "----"
+	print "----"
+
+#Descriptions of all employees removed from the list, by POI and non-POI
+print "The following POIs were removed from the training dataset"
+print poi_outlier_dict.keys()
+
+print "The following non-POIs were removed from the training dataset"
+print non_poi_outlier_dict.keys()
+
+# non_poi_outlier_dict summary statistics
+
+# print poi_outlier_dict
 
 #Create feature: 'exclusive_poi_exchange' - all emails per user to or from a POI with no other recipients 
 # print data_dict.keys()
@@ -178,13 +221,15 @@ print "... and {0} POIs".format(sum(pois))
 
 data = featureFormat(rescaled_data_dict, features_list, sort_keys = True)
 poi_data = featureFormat(poi_outlier_dict, features_list, sort_keys = True)
-non_poi_data = featureFormat(poi_outlier_dict, features_list, sort_keys = True)
+non_poi_data = featureFormat(non_poi_outlier_dict, features_list, sort_keys = True)
 
 labels, features = targetFeatureSplit(data)
 poi_labels, poi_features = targetFeatureSplit(poi_data)
 non_poi_labels, non_poi_features = targetFeatureSplit(non_poi_data)
 
 feature_train, feature_test, label_train, label_test = train_test_split(features, labels, test_size = 0.3, random_state=42)
+feature_train
+
 feature_test = feature_test + poi_features + non_poi_features
 label_test = label_test + poi_labels + non_poi_labels
 
@@ -193,7 +238,8 @@ best_features = SelectKBest(chi2, 5)
 best_feature_train = best_features.fit_transform(feature_train, label_train)
 best_feature_test = best_features.transform(feature_test)
 best_feature_set = best_features.transform(features) #Transform features in aggregate
-print "These features have been selected:"
+
+print "The following features have been selected based on SelectKBest algorithms:"
 #Omit 'poi' from feature list to be displayed
 best_feature_list = [features_list[1:][i] for i in best_features.get_support(indices = True)]
 print best_feature_list
@@ -201,7 +247,7 @@ print best_feature_list
 sv_clf = svm.SVC(kernel='linear', C=200)
 nb_clf = naive_bayes.GaussianNB()
 dt_clf = tree.DecisionTreeClassifier(min_samples_split=5)
-ad_clf = ensemble.AdaBoostClassifier(n_estimators=10, random_state=42)
+ad_clf = ensemble.AdaBoostClassifier(n_estimators=20, random_state=42)
 rf_clf = ensemble.RandomForestClassifier()
 kn_clf = KNeighborsClassifier()
 
@@ -231,10 +277,10 @@ for f in range(len(best_feature_list)):
 
 #Using GridSearchCV to find optimal AdaBoost classifier parameters
 #Including only the best features
-folds = 1000
+folds = 500
 cv = StratifiedShuffleSplit(
-     labels, folds, random_state=42)
-parameters = {'n_estimators':[10,20,30]}
+     labels, folds, random_state=65)
+parameters = {'n_estimators':[10,20,30,40,50]}
 grid = GridSearchCV(clf, parameters, cv = cv, scoring='f1')
 grid.fit(best_feature_set, labels)
 
@@ -260,7 +306,7 @@ best_non_poi_features = best_features.transform(non_poi_features)
 true_negatives = 0
 false_positives = 0
 
-#Reusing some code from 'tester.py'
+#Reusing some code from 'tester.py' to address questions from previous reviewer
 ### test the classifier on non-POI outliers 
 predictions = clf.predict(best_non_poi_features)
 for prediction, truth in zip(predictions, non_poi_labels):
@@ -279,10 +325,16 @@ accuracy = 1.0*(true_negatives)/float(total_predictions)
 print "Classifier correctly predicted non-POI status of {:.4f} of all non-POI outlier datapoints".format(accuracy, 2)
 print "Total number of excluded outlier non-POIs: {0}".format(total_predictions)
 
-#Adding back POIs to rescaled_data_dict
-rescaled_data_dict.update(poi_outlier_dict)
 #Adding back 'poi' to best_feature_list to ensure tester runs properly
 best_feature_list.insert(0,'poi')
 
-dump_classifier_and_data(clf, rescaled_data_dict, best_feature_list)
-test_classifier(clf, rescaled_data_dict, best_feature_list)
+#Adding back outliers for testing in tester.py
+rescaled_data_dict.update(poi_outlier_dict)
+total_outlier_dict = poi_outlier_dict.copy()
+total_outlier_dict.update(non_poi_outlier_dict)
+
+#Note - total_outlier_dict added as a new argument for testing functions in tester.py
+#This includes all outliers removed for training in tester.py
+dump_classifier_and_data(clf, rescaled_data_dict, best_feature_list, total_outlier_dict)
+test_classifier(clf, rescaled_data_dict, best_feature_list, total_outlier_dict)
+
