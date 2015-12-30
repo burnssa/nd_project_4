@@ -266,6 +266,7 @@ clf = ad_clf
 print clf
 
 #Outputting the importances of the 'best features'
+print "The importances of best identified featues are:"
 importances = clf.feature_importances_
 indices = np.argsort(importances)[::-1][:len(best_feature_list)]
 for f in range(len(best_feature_list)):
@@ -324,13 +325,11 @@ print "Total number of excluded outlier non-POIs: {0}".format(total_predictions)
 #Adding back 'poi' to best_feature_list to ensure tester runs properly
 best_feature_list.insert(0,'poi')
 
-#Adding back outliers for testing in tester.py
-rescaled_data_dict.update(poi_outlier_dict)
-total_outlier_dict = poi_outlier_dict.copy()
-total_outlier_dict.update(non_poi_outlier_dict)
+#combining all outliers in dict to be added back to test set after training
+poi_outlier_dict.update(non_poi_outlier_dict)
 
-#Note - total_outlier_dict added as a new argument for testing functions in tester.py
+#Note - poi_outlier_dict added as a new argument for testing functions in tester.py
 #This includes all outliers removed for training in tester.py
-dump_classifier_and_data(clf, rescaled_data_dict, best_feature_list, total_outlier_dict)
-test_classifier(clf, rescaled_data_dict, best_feature_list, total_outlier_dict)
+dump_classifier_and_data(clf, rescaled_data_dict, best_feature_list, poi_outlier_dict)
+test_classifier(clf, rescaled_data_dict, best_feature_list, poi_outlier_dict)
 
