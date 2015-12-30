@@ -183,10 +183,6 @@ print poi_outlier_dict.keys()
 print "The following non-POIs were removed from the training dataset"
 print non_poi_outlier_dict.keys()
 
-# non_poi_outlier_dict summary statistics
-
-# print poi_outlier_dict
-
 #Create feature: 'exclusive_poi_exchange' - all emails per user to or from a POI with no other recipients 
 # print data_dict.keys()
 
