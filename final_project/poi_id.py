@@ -81,9 +81,9 @@ for feature in features_list[1:]:
 print "Rescaled_data_dict has {0} elements".format(len(rescaled_data_dict))
 
 #Function to trim the 1% of points that have the largest residual errors...
-#...(different between the prediction and actual)
+#...different between the prediction and actual
 #return a list of tuples named cleaned_data where... 
-#each tuple is of the form (salary, feature, error)
+#...each tuple is of the form (salary, feature, error)
 def outlierFinder(keys, x_features, y_features):
 	reg = linear_model.LinearRegression()
 	reg.fit(x_features, y_features)
@@ -266,7 +266,7 @@ clf = ad_clf
 print clf
 
 #Outputting the importances of the 'best features'
-print "The importances of best identified featues are:"
+print "The importances of best identified features are:"
 importances = clf.feature_importances_
 indices = np.argsort(importances)[::-1][:len(best_feature_list)]
 for f in range(len(best_feature_list)):
